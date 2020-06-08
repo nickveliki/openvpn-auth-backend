@@ -1,16 +1,10 @@
-const jables = require("jables/proc/fetchData");
+const jables = require("jables-multiproc");
 const fs = require("fs");
-const crypto = require("crypto");
 //replace exampledomain with whatever you please, but for readability's sake, it should be the main domain you are backending for
 const secdatpath = "./.secdat";
 const location = "./udb/";
-if (!fs.existsSync(secdatpath)){
-    fs.writeFileSync(secdatpath, JSON.stringify({key: crypto.randomBytes(16).toString("base64"), iv:crypto.randomBytes(16).toString("base64")}));
-}
-const { key, iv } = JSON.parse(fs.readFileSync(secdatpath).toString())
-const secdat = {key:Buffer.from(key, "base64"), iv: Buffer.from(iv, "base64")}
 const {encodePassword, verifyPassword} = require("./verlikifyHandler");
-jables.setup(location, secdat)
+jables.setup({location, secDatFileLoc:secdatpath}).then(console.log).catch((error)=>{console.log("jablessetup", error)});
 const makefolder = (folder)=>new Promise((res)=>{
     fs.exists(folder, (exists)=>{
         if(!exists){
@@ -58,7 +52,7 @@ const searchArray = (searchkey, searchvalue, array)=>{
     }
 const userBase = {path:"user", indexKey: "uid"}
 const getUsers = ()=> new Promise((res)=>{
-    jables.getDefinition(userBase).then((obj)=>{
+    jables.getDefinition({location, definition: userBase}).then((obj)=>{
         console.log(obj)
         res(JSON.parse(obj).Versions);
     }, (error)=>{
@@ -92,9 +86,9 @@ const register = (userData)=>new Promise((res, rej)=>{
                 const uid = users.length>0?users[users.length-1].uid+1:0;
                 userData.uid = uid;
                 userData.password = encodePassword(userData.password);
-                jables.writeDefinition(updateObject(userBase, userData)).then(()=>{
+                jables.writeDefinition({location, definition: updateObject(userBase, userData)}).then(()=>{
                     setTimeout(()=>{
-                        jables.deleteVersion(updateObject(userBase, {uid})).then(()=>{
+                        jables.deleteVersion({location, definition: updateObject(userBase, {uid})}).then(()=>{
                             logEntry(`${userData.name}/${uid} failed to confirm their registration. deleted...`)
                         }).catch(console.log);
                     },2*60*60*1000)
@@ -125,7 +119,7 @@ const registerExposed = (userData, vtd)=>new Promise((res, rej)=>{
         rej(error)
     })
 })
-const confirm = (uid)=>jables.writeDefinition(updateObject(userBase, {uid, confirmed: true, lockout: Date.now()}))
+const confirm = (uid)=>jables.writeDefinition({location, definition: updateObject(userBase, {uid, confirmed: true, lockout: Date.now()})})
 const login = (userData)=>new Promise((res, rej)=>{
     console.log(userData)
     getUser(userData).then((user)=>{
@@ -159,7 +153,7 @@ const checkv = ({uid, name, email, now}) => new Promise((res, rej)=>{
 })
 const logout = ({uid, now})=>new Promise((res, rej)=>{
     checkv({uid, now}).then(()=>{
-        jables.writeDefinition(updateObject(userBase, {uid, lockout: Date.now()})).then(()=>{
+        jables.writeDefinition({location, definition: updateObject(userBase, {uid, lockout: Date.now()})}).then(()=>{
             logEntry(`${user.name}/${user.uid} logout`)
             
         }, (error)=>{
@@ -195,7 +189,7 @@ const patchUser = ({user, vtd})=>new Promise((res, rej)=>{
                     if(!user.uid){
                         user.uid=currentUser.uid;
                     }
-                    jables.writeDefinition(updateObject(userBase, user)).then(()=>{
+                    jables.writeDefinition({location, definition: updateObject(userBase, user)}).then(()=>{
                         logEntry(`${user.name}/${user.uid} data changed`)
                         res();
                     },  (error)=>{
@@ -208,7 +202,7 @@ const patchUser = ({user, vtd})=>new Promise((res, rej)=>{
             if(!user.uid){
                 user.uid=currentUser.uid;
             }
-            jables.writeDefinition(updateObject(userBase, user)).then(()=>{
+            jables.writeDefinition({location, definition: updateObject(userBase, user)}).then(()=>{
                 logEntry(`${user.name}/${user.uid} data changed`)
                 res();
             },  (error)=>{

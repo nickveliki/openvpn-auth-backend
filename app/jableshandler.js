@@ -20,7 +20,7 @@ const logEntry = (logData)=>{
     const D = new Date();
     makefolder("./"+D.getFullYear()).then(()=>{
         const prefix = D.getHours()+":"+D.getMinutes()+":"+D.getSeconds()
-        fs.writeFileSync("./"+D.getFullYear()+"/"+D.getMonth()+"_"+D.getDate()+".log", prefix+": "+logData+"\r\n", {flag:"a"})
+        fs.writeFileSync("./"+D.getFullYear()+"/"+(D.getMonth()+1)+"_"+D.getDate()+".log", prefix+": "+logData+"\r\n", {flag:"a"})
     })   
 }
 const searchArray = (searchkey, searchvalue, array)=>{

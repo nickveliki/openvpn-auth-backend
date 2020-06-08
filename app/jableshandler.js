@@ -61,6 +61,7 @@ const getUsers = ()=> new Promise((res)=>{
 const getUser = ({uid, email, name})=>new Promise((res, rej)=>{
     console.log(uid, email, name)
     getUsers().then((users)=>{
+        console.log(users);
         let searchterm = uid!=undefined?"uid":email?"email":name?"name":null;
         if(searchterm!=null){
             const {i, before} = searchArray(searchterm, {uid, email, name}[searchterm], users);

@@ -16,13 +16,14 @@ const makefolder = (folder)=>new Promise((res)=>{
         }
     })
 })
-const logEntry = (logData)=>{
+const logEntry = (logData)=>new Promise((res)=>{
     const D = new Date();
     makefolder("./"+D.getFullYear()).then(()=>{
         const prefix = D.getHours()+":"+D.getMinutes()+":"+D.getSeconds()
-        fs.writeFileSync("./"+D.getFullYear()+"/"+(D.getMonth()+1)+"_"+D.getDate()+".log", prefix+": "+logData+"\r\n", {flag:"a"})
+        fs.writeFileSync("./"+D.getFullYear()+"/"+(D.getMonth()+1)+"_"+D.getDate()+".log", prefix+": "+logData+"\r\n", {flag:"a"});
+        res();
     })   
-}
+})
 const searchArray = (searchkey, searchvalue, array)=>{
     if(array.length>0){
     let search = array.map((item)=>item).sort((a, b)=>a[searchkey]<b[searchkey]?-1:1);

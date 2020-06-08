@@ -1,10 +1,10 @@
 const jables = require("./app/jableshandler");
 const {username, password} = process.env;
 const action = [];
-    jables.login({name: username, password}).then((user)=>{
-        action.push("return");
+jables.login({name: username, password}).then((user)=>{
+    action.push("return");
     }, ()=>{
-        action.push("throw");
+    action.push("throw");
 })
 const interval = setInterval(()=>{
     if(action.length){

@@ -217,7 +217,7 @@ rej(error)
 })
 getUsers().then((users)=>{
     if(users.length==0){
-        register(require("./firstadmin.json")).then(logEntry("Authorization control and management system initialized"), console.log)
+        register(require("./firstadmin.json")).then(()=>{logEntry("Authorization control and management system initialized")}, console.log)
     }
 }, console.log)
 module.exports = {

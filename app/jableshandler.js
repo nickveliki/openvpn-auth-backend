@@ -55,7 +55,8 @@ const getUsers = ()=> new Promise((res)=>{
     jables.getDefinition({location, definition: userBase}).then((obj)=>{
         console.log(obj)
         res(JSON.parse(obj).Versions);
-    }, ()=>{
+    }, (error)=>{
+        console.log(error)
         res([]);
     })
 })

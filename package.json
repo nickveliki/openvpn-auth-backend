@@ -1,0 +1,30 @@
+{
+  "name": "openvpn-auth-manager",
+  "version": "1.0.0",
+  "description": "no-client-ca openvpn authorization management backend",
+  "main": "index.js",
+  "scripts": {
+    "test": "nerp",
+    "dev": "node dev.js 3000 ./.secdat"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nickveliki/openvpn-auth-backend.git"
+  },
+  "keywords": [
+    "openvpn",
+    "auth",
+    "no-cca"
+  ],
+  "author": "nickveliki",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "jables-multiproc": "git+https://github.com/nickveliki/jables-multiproc.git",
+    "multer": "^1.4.2",
+    "nodemailer": "^6.4.6",
+    "verlikify": "git+https://github.com/nickveliki/Verlikify.git",
+    "web-push": "^3.4.3"
+  }
+}

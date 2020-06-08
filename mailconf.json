@@ -1,0 +1,9 @@
+{
+    "host":"mail.thern.wtf",
+    "port":587,
+    "secure":false,
+    "auth":{
+        "user":"phil@thern.wtf",
+        "pass":"54726f6c6c"
+    }
+}

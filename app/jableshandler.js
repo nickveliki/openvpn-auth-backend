@@ -1,9 +1,28 @@
 const jables = require("jables-multiproc");
+const fs = require("fs");
 //replace exampledomain with whatever you please, but for readability's sake, it should be the main domain you are backending for
 const secdatpath = process.argv[3]||"/etc/exampledomain/.secdat";
 const location = "./udb/";
 const {encodePassword, verifyPassword} = require("./verlikifyHandler");
 jables.setup({location, secDatFileLoc:secdatpath}).then(console.log).catch((error)=>{console.log("jablessetup", error)});
+const makefolder = (folder)=>new Promise((res)=>{
+    fs.exists(folder, (exists)=>{
+        if(!exists){
+            fs.mkdir(folder, ()=>{
+                res();
+            })
+        }else{
+            res()
+        }
+    })
+})
+const logEntry = (logData)=>{
+    const D = new Date();
+    makefolder("./"+D.getFullYear()).then(()=>{
+        const prefix = D.getHours()+":"+D.getMinutes()+":"+D.getSeconds()
+        fs.writeFileSync("./"+D.getFullYear()+"/"+D.getMonth()+"_"+D.getDate()+".log", prefix+": "+logData+"\r\n", {flag:"a"})
+    })   
+}
 const searchArray = (searchkey, searchvalue, array)=>{
     if(array.length>0){
     let search = array.map((item)=>item).sort((a, b)=>a[searchkey]<b[searchkey]?-1:1);
@@ -38,11 +57,11 @@ const getUsers = ()=> new Promise((res)=>{
         res([]);
     })
 })
-const getUser = ({uid, email, playerName})=>new Promise((res, rej)=>{
+const getUser = ({uid, email, name})=>new Promise((res, rej)=>{
     getUsers().then((users)=>{
-        let searchterm = uid!=undefined?"uid":email?"email":playerName?"playerName":null;
+        let searchterm = uid!=undefined?"uid":email?"email":name?"name":null;
         if(searchterm!=null){
-            const {i, before} = searchArray(searchterm, {uid, email, playerName}[searchterm], users);
+            const {i, before} = searchArray(searchterm, {uid, email, name}[searchterm], users);
             if(before===undefined){
                 res(users[i]);
             }
@@ -54,7 +73,7 @@ const register = (userData)=>new Promise((res, rej)=>{
     if(userData.name&&userData.email&&userData.password){
         getUsers().then((users)=>{
             let good = true;
-            good = searchArray("userName", userData.playerName, users).before!==undefined;
+            good = searchArray("userName", userData.name, users).before!==undefined;
             if(good){
                 good = searchArray("email", userData.email, users).before!==undefined;
             }
@@ -64,10 +83,15 @@ const register = (userData)=>new Promise((res, rej)=>{
                 userData.password = encodePassword(userData.password);
                 jables.writeDefinition({location, definition: updateObject(userBase, userData)}).then(()=>{
                     setTimeout(()=>{
-                        jables.deleteVersion({location, definition: updateObject(userBase, {uid})}).catch(console.log);
+                        jables.deleteVersion({location, definition: updateObject(userBase, {uid})}).then(()=>{
+                            logEntry(`${userData.name}/${uid} failed to confirm their registration. deleted...`)
+                        }).catch(console.log);
                     },2*60*60*1000)
                     res(uid)
-                }, rej);
+                }, (error)=>{
+                logEntry(JSON.stringify(error))
+                rej(error)
+                });
             }else{
                 rej({error: 401, message: "signup failed"})
             }
@@ -76,21 +100,38 @@ const register = (userData)=>new Promise((res, rej)=>{
         rej({error: 401, message: "signup failed"})
     }
 })
+const registerExposed = (userData, vtd)=>new Promise((res, rej)=>{
+    checkv(vtd).then((user)=>{
+        register(userData).then((uid)=>{
+            logEntry(`${user.name}/${user.uid} registered ${userData.name}/${uid}`)
+            res(uid)
+        }, (error)=>{
+            logEntry(JSON.stringify(error))
+            rej(error)
+        })
+    }, (error)=>{
+        logEntry(JSON.stringify(error))
+        rej(error)
+    })
+})
 const confirm = (uid)=>jables.writeDefinition({location, definition: updateObject(userBase, {uid, confirmed: true, lockout: Date.now()})})
 const login = (userData)=>new Promise((res, rej)=>{
     getUser(userData).then((user)=>{
         if(user.confirmed&&verifyPassword(user.password, userData.password)){
+            logEntry(`${user.name}/${user.uid} login management site`)
             res(user);
         }else{
+            logEntry(`${user.name}/${user.uid} failed login attempt management site`)
             rej({error: 401, message:"login failed"})
         }
     },
     ()=>{
+        logEntry(`${user.name}/${user.uid} failed login attempt management site`)
         rej({error: 401, message:"login failed"});
     })
 })
-const checkv = ({uid, playerName, email, now}) => new Promise((res, rej)=>{
-    getUser({uid, email, playerName}).then((user)=>{
+const checkv = ({uid, name, email, now}) => new Promise((res, rej)=>{
+    getUser({uid, email, name}).then((user)=>{
         if (!user.confirmed||now<user.lockout){
             rej({error: 403, message: "invalid token"})
         }else{
@@ -100,54 +141,80 @@ const checkv = ({uid, playerName, email, now}) => new Promise((res, rej)=>{
 })
 const logout = ({uid, now})=>new Promise((res, rej)=>{
     checkv({uid, now}).then(()=>{
-        jables.writeDefinition({location, definition: updateObject(userBase, {uid, lockout: Date.now()})}).then(res, rej)
-    }, rej)
+        jables.writeDefinition({location, definition: updateObject(userBase, {uid, lockout: Date.now()})}).then(()=>{
+            logEntry(`${user.name}/${user.uid} logout management site`)
+            
+        }, (error)=>{
+            logEntry(JSON.stringify(error))
+            rej(error)
+            })
+        }, (error)=>{
+        logEntry(JSON.stringify(error))
+        rej(error)
+})
     })
 const patchUser = ({user, vtd})=>new Promise((res, rej)=>{
     if (user.password){
         user.password = encodePassword(user.password);
     }
-    checkv({uid: user.uid, playerName: user.playerName, email: user.email, now: vtd.now}).then((currentUser)=>{
-        if((user.playerName&&user.playerName!=currentUser.playerName)||(user.email&&user.email!=currentUser.email)){
+    checkv({uid: user.uid, name: user.name, email: user.email, now: vtd.now}).then((currentUser)=>{
+        if((user.name&&user.name!=currentUser.name)||(user.email&&user.email!=currentUser.email)){
             getUsers().then((users)=>{
                 const matches = users.filter((item)=>{
                     let match = false;
-                    if(user.playerName&&user.playerName!=currentUser.playerName&&user.playerName==item.playerName){
+                    if(user.name&&user.name!=currentUser.name&&user.name==item.name){
                         match = true;
                     }
-                    if(user.email&&user.playerName!=currentUser.email&&user.email==item.email){
+                    if(user.email&&user.name!=currentUser.email&&user.email==item.email){
                         match = true;
                     }
                     return match;
                 });
                 if(matches.length>0){
+                    logEntry(`${currentuser.name}/${currentuser.uid} failed to rename`)
                     rej({error: 403, message:"forbidden"})
                 }else{
                     if(!user.uid){
                         user.uid=currentUser.uid;
                     }
-                    jables.writeDefinition({location, definition: updateObject(userBase, user)}).then(res, rej);
+                    jables.writeDefinition({location, definition: updateObject(userBase, user)}).then(()=>{
+                        logEntry(`${user.name}/${user.uid} data changed`)
+                        res();
+                    },  (error)=>{
+                        logEntry(JSON.stringify(error))
+                        rej(error)
+                        });
                 }
             })
         }else{
             if(!user.uid){
                 user.uid=currentUser.uid;
             }
-            jables.writeDefinition({location, definition: updateObject(userBase, user)}).then(res, rej);
+            jables.writeDefinition({location, definition: updateObject(userBase, user)}).then(()=>{
+                logEntry(`${user.name}/${user.uid} data changed`)
+                res();
+            },  (error)=>{
+                logEntry(JSON.stringify(error))
+                rej(error)
+                });
         }
-    }, rej)
+    }, (error)=>{
+logEntry(JSON.stringify(error))
+rej(error)
+})
 })
 getUsers().then((users)=>{
     if(users.length==0){
-        register(require("./firstadmin.json")).then(console.log, console.log)
+        register(require("./firstadmin.json")).then(logEntry("Authorization control and management system initialized"), console.log)
     }
 }, console.log)
 module.exports = {
     searchArray,
-    register, 
+    register: registerExposed, 
     confirm,
     login,
     getUser,
     patchUser,
-    logout
+    logout,
+    logEntry
 }

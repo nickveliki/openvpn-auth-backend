@@ -10,7 +10,7 @@ const getHTML = (filename, alternate)=>{
     return existsSync(filename)?readFileSync(filename):("<h1>"+(alternate||"something something... erm... SOMETHING!")+"</h1>")
 }
 route.post("/register", verifyToken, decode, (req, res, next)=>{
-    jables.register(req.body).then((uid)=>{
+    jables.register(req.body, req.vtd).then((uid)=>{
         let token = JSON.stringify(createToken({uid, now:Date.now(), type:"confirm"}));
         while(token.includes('"')){
             token = token.replace('"', '');

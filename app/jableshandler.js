@@ -59,6 +59,7 @@ const getUsers = ()=> new Promise((res)=>{
     })
 })
 const getUser = ({uid, email, name})=>new Promise((res, rej)=>{
+    console.log(uid, email, name)
     getUsers().then((users)=>{
         let searchterm = uid!=undefined?"uid":email?"email":name?"name":null;
         if(searchterm!=null){
@@ -121,16 +122,21 @@ const login = (userData)=>new Promise((res, rej)=>{
     getUser(userData).then((user)=>{
         console.log(user);
         if(user.confirmed&&verifyPassword(user.password, userData.password)){
-            logEntry(`${user.name}/${user.uid} login`)
-            res(user);
+            logEntry(`${user.name}/${user.uid} login`).then(()=>{
+                res(user);
+            })
         }else{
-            logEntry(`${user.name}/${user.uid} failed login`)
-            rej({error: 401, message:"login failed"})
+            logEntry(`${user.name}/${user.uid} failed login`).then(()=>{
+                console.log("login failed")    
+                rej({error: 401, message:"login failed"})
+            })
         }
     },
-    ()=>{
-        logEntry(`${userData.name} failed login`)
-        rej({error: 401, message:"login failed"});
+    (error)=>{
+        console.log(error)
+        logEntry(`${userData.name} failed login`).then(()=>{
+            rej({error: 401, message:"login failed"});
+        })
     })
 })
 const checkv = ({uid, name, email, now}) => new Promise((res, rej)=>{

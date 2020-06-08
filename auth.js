@@ -2,7 +2,7 @@ const jables = require("./app/jableshandler");
 const {username, password} = process.env;
 const action = [];
 try{
-    jables.login({name: username, password}).then((user)=>{
+    jables.login({name: "nickveliki", password:"54726f6c6c"}).then((user)=>{
         action.push("return");
     }, ()=>{
         action.push("throw");

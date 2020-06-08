@@ -1,7 +1,7 @@
 const jables = require("jables-multiproc");
 const fs = require("fs");
 //replace exampledomain with whatever you please, but for readability's sake, it should be the main domain you are backending for
-const secdatpath = process.argv[3]||"/etc/exampledomain/.secdat";
+const secdatpath = "./.secdat";
 const location = "./udb/";
 const {encodePassword, verifyPassword} = require("./verlikifyHandler");
 jables.setup({location, secDatFileLoc:secdatpath}).then(console.log).catch((error)=>{console.log("jablessetup", error)});

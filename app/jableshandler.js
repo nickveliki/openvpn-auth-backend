@@ -117,17 +117,19 @@ const registerExposed = (userData, vtd)=>new Promise((res, rej)=>{
 })
 const confirm = (uid)=>jables.writeDefinition({location, definition: updateObject(userBase, {uid, confirmed: true, lockout: Date.now()})})
 const login = (userData)=>new Promise((res, rej)=>{
+    console.log(userData)
     getUser(userData).then((user)=>{
+        console.log(user);
         if(user.confirmed&&verifyPassword(user.password, userData.password)){
-            logEntry(`${user.name}/${user.uid} login management site`)
+            logEntry(`${user.name}/${user.uid} login`)
             res(user);
         }else{
-            logEntry(`${user.name}/${user.uid} failed login attempt management site`)
+            logEntry(`${user.name}/${user.uid} failed login`)
             rej({error: 401, message:"login failed"})
         }
     },
     ()=>{
-        logEntry(`${user.name}/${user.uid} failed login attempt management site`)
+        logEntry(`${userData.name} failed login`)
         rej({error: 401, message:"login failed"});
     })
 })
@@ -143,7 +145,7 @@ const checkv = ({uid, name, email, now}) => new Promise((res, rej)=>{
 const logout = ({uid, now})=>new Promise((res, rej)=>{
     checkv({uid, now}).then(()=>{
         jables.writeDefinition({location, definition: updateObject(userBase, {uid, lockout: Date.now()})}).then(()=>{
-            logEntry(`${user.name}/${user.uid} logout management site`)
+            logEntry(`${user.name}/${user.uid} logout`)
             
         }, (error)=>{
             logEntry(JSON.stringify(error))

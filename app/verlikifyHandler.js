@@ -37,11 +37,9 @@ const verifyToken = (req, res, next)=>{
     const sighex = base36ToHex(base[0]);
     const comp =  Buffer.from(base[1], "base64").toString();
     if(verify(sighex, comp , "hex")){
-        console.log("verified");
         req.vtd=JSON.parse(comp);
         next();
     }else{
-        console.log("not verified");
         return res.status(401).json("invalid token")
     }
 }

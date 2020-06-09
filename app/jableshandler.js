@@ -3,8 +3,8 @@ const fs = require("fs");
 //replace exampledomain with whatever you please, but for readability's sake, it should be the main domain you are backending for
 const secdatpath = "./.secdat";
 const location = "./udb/";
+const path = require("path");
 const {encodePassword, verifyPassword} = require("./verlikifyHandler");
-jables.setup({location, secDatFileLoc:secdatpath}).then(console.log).catch((error)=>{console.log("jablessetup", error)});
 const makefolder = (folder)=>new Promise((res)=>{
     fs.exists(folder, (exists)=>{
         if(!exists){
@@ -18,12 +18,14 @@ const makefolder = (folder)=>new Promise((res)=>{
 })
 const logEntry = (logData)=>new Promise((res)=>{
     const D = new Date();
-    makefolder("./"+D.getFullYear()).then(()=>{
-        const prefix = D.getHours()+":"+D.getMinutes()+":"+D.getSeconds()
-        fs.writeFileSync("./"+D.getFullYear()+"/"+(D.getMonth()+1)+"_"+D.getDate()+".log", prefix+": "+logData+"\r\n", {flag:"a"});
+    const folder = path.resolve(path.join(__dirname,"..", D.getFullYear().toString()))
+    makefolder(folder).then(()=>{
+        const prefix = (D.getHours()<10?"0":"")+D.getHours()+":"+(D.getMinutes()<10?"0":"")+D.getMinutes()+":"+(D.getSeconds()<10?"0":"")+D.getSeconds()
+        fs.writeFileSync(folder+"/"+(D.getMonth()<9?"0":"")+(D.getMonth()+1)+"_"+(D.getDate()<10?"0":"")+D.getDate()+".log", prefix+": "+logData+"\r\n", {flag:"a"});
         res();
     })   
 })
+jables.setup({location, secDatFileLoc:secdatpath}).then(console.log).catch(console.log);
 const searchArray = (searchkey, searchvalue, array)=>{
     if(array.length>0){
     let search = array.map((item)=>item).sort((a, b)=>a[searchkey]<b[searchkey]?-1:1);
@@ -53,17 +55,13 @@ const searchArray = (searchkey, searchvalue, array)=>{
 const userBase = {path:"user", indexKey: "uid"}
 const getUsers = ()=> new Promise((res)=>{
     jables.getDefinition({location, definition: userBase}).then((obj)=>{
-        console.log(obj)
         res(JSON.parse(obj).Versions);
     }, (error)=>{
-        console.log(error)
         res([]);
     })
 })
 const getUser = ({uid, email, name})=>new Promise((res, rej)=>{
-    console.log(uid, email, name)
     getUsers().then((users)=>{
-        console.log(users);
         let searchterm = uid!=undefined?"uid":email?"email":name?"name":null;
         if(searchterm!=null){
             const {i, before} = searchArray(searchterm, {uid, email, name}[searchterm], users);
@@ -90,7 +88,7 @@ const register = (userData)=>new Promise((res, rej)=>{
                     setTimeout(()=>{
                         jables.deleteVersion({location, definition: updateObject(userBase, {uid})}).then(()=>{
                             logEntry(`${userData.name}/${uid} failed to confirm their registration. deleted...`)
-                        }).catch(console.log);
+                        }).catch(logEntry);
                     },2*60*60*1000)
                     res(uid)
                 }, (error)=>{
@@ -121,23 +119,19 @@ const registerExposed = (userData, vtd)=>new Promise((res, rej)=>{
 })
 const confirm = (uid)=>jables.writeDefinition({location, definition: updateObject(userBase, {uid, confirmed: true, lockout: Date.now()})})
 const login = (userData)=>new Promise((res, rej)=>{
-    console.log(userData)
     getUser(userData).then((user)=>{
-        console.log(user);
         if(user.confirmed&&verifyPassword(user.password, userData.password)){
-            logEntry(`${user.name}/${user.uid} login`).then(()=>{
+            logEntry(`${user.name}/${user.uid} login to management success`).then(()=>{
                 res(user);
             })
         }else{
-            logEntry(`${user.name}/${user.uid} failed login`).then(()=>{
-                console.log("login failed")    
-                rej({error: 401, message:"login failed"})
+            logEntry(`${user.name}/${user.uid} failed login to management`).then(()=>{ 
+                rej({error: 401, message:"login failed to management"})
             })
         }
     },
     (error)=>{
-        console.log(error)
-        logEntry(`${userData.name} failed login`).then(()=>{
+        logEntry(`${userData.name} failed login to management`).then(()=>{
             rej({error: 401, message:"login failed"});
         })
     })
@@ -154,7 +148,7 @@ const checkv = ({uid, name, email, now}) => new Promise((res, rej)=>{
 const logout = ({uid, now})=>new Promise((res, rej)=>{
     checkv({uid, now}).then(()=>{
         jables.writeDefinition({location, definition: updateObject(userBase, {uid, lockout: Date.now()})}).then(()=>{
-            logEntry(`${user.name}/${user.uid} logout`)
+            logEntry(`${user.name}/${user.uid} logout from management`)
             
         }, (error)=>{
             logEntry(JSON.stringify(error))
@@ -217,9 +211,9 @@ rej(error)
 })
 getUsers().then((users)=>{
     if(users.length==0){
-        register(require("./firstadmin.json")).then(()=>{logEntry("Authorization control and management system initialized")}, console.log)
+        register(require("./firstadmin.json")).then(()=>{logEntry("Authorization control and management system initialized")}, logEntry)
     }
-}, console.log)
+}, logEntry)
 module.exports = {
     searchArray,
     register: registerExposed, 

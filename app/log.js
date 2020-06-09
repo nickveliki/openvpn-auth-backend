@@ -1,5 +1,5 @@
 const {createKey, encrypt, decrypt} = require("./cbuff");
-const {searchArray} = require("./jableshandler");
+const {searchArray, logEntry} = require("./jableshandler");
 const {pushMessage} = require("./pushHandler");
 const logged =  [];
 const addLog = ({uid, password, subscription})=>new Promise((res, rej)=>{
@@ -8,7 +8,7 @@ const addLog = ({uid, password, subscription})=>new Promise((res, rej)=>{
         const {i, before} = searchArray("uid", uid, logged);
         if(before===undefined){
             warning = true;
-            sendMessage({uid, message:{type: "warning", text:"Someone is logging on to your account. If this isn't you, contact phil@thern.wtf"}}).catch(console.log)
+            sendMessage({uid, message:{type: "warning", text:"Someone is logging on to your account. If this isn't you, contact phil@thern.wtf"}}).catch(logEntry)
             logged[i].sesskey = sesskey;
             logged[i].subscription = subscription
         }else{

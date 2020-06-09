@@ -18,7 +18,6 @@ route.post("/register", verifyToken, decode, (req, res, next)=>{
         sendMail(req.body.email, "confirm email", confirm(`${connection.protocol||'http'}://${connection.host||'localhost'}:${connection.port||3000}/user/confirm?vtoken=${token}`), true).then(()=>{
             res.status(201).end();
         }, (err)=>{
-            console.log(err);
             res.status(500).json("sorry, there was an error. Try again later")
         })
     }, ({error, message})=>{

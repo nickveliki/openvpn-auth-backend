@@ -13,4 +13,5 @@ const logEntry = (logData)=>{
     const prefix = (D.getHours()<10?"0":"")+D.getHours()+":"+(D.getMinutes()<10?"0":"")+D.getMinutes()+":"+(D.getSeconds()<10?"0":"")+D.getSeconds()
     fs.writeFileSync(p+"/"+(D.getMonth()<9?"0":"")+(D.getMonth()+1)+"_"+(D.getDate()<10?"0":"")+D.getDate()+".vpnlog", prefix+": "+logData+"\r\n", {flag:"a"});
 }
+console.log(provess.env)
 logEntry(`${process.env.commonname} has disconnected`)

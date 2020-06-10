@@ -85,11 +85,18 @@ const register = (userData)=>new Promise((res, rej)=>{
                 userData.uid = uid;
                 userData.password = encodePassword(userData.password);
                 jables.writeDefinition({location, definition: updateObject(userBase, userData)}).then(()=>{
-                    setTimeout(()=>{
-                        jables.deleteVersion({location, definition: updateObject(userBase, {uid})}).then(()=>{
-                            logEntry(`${userData.name}/${uid} failed to confirm their registration. deleted...`)
-                        }).catch(logEntry);
-                    },2*60*60*1000)
+                    if (!userData.confirmed){
+                        setTimeout(()=>{
+                            getUser(userData).then(({confirmed})=>{
+                                if(!confirmed){
+                                    jables.deleteVersion({location, definition: updateObject(userBase, {uid})}).then(()=>{
+                                        logEntry(`${userData.name}/${uid} failed to confirm their registration. deleted...`)
+                                    }).catch(logEntry);
+                                }
+                            }, logEntry)
+                            
+                        },2*60*60*1000)
+                    }
                     res(uid)
                 }, (error)=>{
                 logEntry(JSON.stringify(error))

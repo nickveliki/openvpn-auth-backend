@@ -1,3 +1,4 @@
+#!/root/.nvm/versions/node/v13.9.0/bin/node
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path")

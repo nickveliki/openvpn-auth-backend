@@ -84,6 +84,9 @@ const register = (userData)=>new Promise((res, rej)=>{
                 const uid = users.length>0?users[users.length-1].uid+1:0;
                 userData.uid = uid;
                 userData.password = encodePassword(userData.password);
+                if(userData.confirmed){
+                    userData.approved=true;
+                }
                 jables.writeDefinition({location, definition: updateObject(userBase, userData)}).then(()=>{
                     if (!userData.confirmed){
                         setTimeout(()=>{
@@ -96,6 +99,7 @@ const register = (userData)=>new Promise((res, rej)=>{
                             }, logEntry)
                             
                         },2*60*60*1000)
+                        logEntry(`${userData.name}/${uid} has applied for membership`)
                     }
                     res(uid)
                 }, (error)=>{
@@ -124,7 +128,14 @@ const registerExposed = (userData, vtd)=>new Promise((res, rej)=>{
         rej(error)
     })
 })
-const confirm = (uid)=>jables.writeDefinition({location, definition: updateObject(userBase, {uid, confirmed: true, lockout: Date.now()})})
+const confirm = (uid)=>new Promise((res, rej)=>{
+    getUser({uid}).then((user)=>{
+        jables.writeDefinition({location, definition: updateObject(userBase, {uid, confirmed: true, lockout: Date.now()})}).then(()=>{
+            logEntry(`${user.name}/${user.uid} email address confirmed`)
+            res(user);
+        }, rej)
+    }, rej)
+})
 const login = (userData)=>new Promise((res, rej)=>{
     getUser(userData).then((user)=>{
         if(user.confirmed&&verifyPassword(user.password, userData.password)){
@@ -216,6 +227,52 @@ logEntry(JSON.stringify(error))
 rej(error)
 })
 })
+const approve = ({uid, from, type})=>new Promise((res, rej)=>{
+    if(type==="approve"){
+        getUsers().then((users)=>{
+            const approvee = searchArray("uid", uid, users);
+            const approver = searchArray("uid", from, users);
+            if(approvee.before===undefined&&approver.before===undefined){
+                if(users[approver.i].approved){
+                    let write = true;
+                    if(users[approvee.i].approvedby){
+                        if(!users[approvee.i].approvedby.includes(from)){
+                            users[approvee.i].approvedby.push(from);
+                            if(users[approvee.i].approvedby.length>users.filter(({approved})=>approved).length/2){
+                                users[approvee.i].approved = true;
+                            }
+                        }else{
+                            write = false;
+                        }
+                    }else{
+                        users[approvee.i].approvedby=[from];
+                    }
+                    if(write){
+                        jables.writeDefinition({location, definition: updateObject(userbase, users[approvee.i])}).then(()=>{
+                            logEntry(`${from} approved ${uid}, ${users[approvee.i].appproved?"fully approved":(Math.ceil(users.filter(({approved})=>approved).length/2-users[approvee.i].appprovedby.length)+" votes missing")}`);
+                            res(users[approvee.i]);
+                        }, (error)=>{
+                            logEntry(JSON.stringify(error))
+                            rej(error)
+                        })
+                    }else{
+                        logEntry(`${from} failed to approve ${uid}: ${from} already approved ${uid}`);
+                        rej({error: 403, message: "forbidden"})
+                    }
+                }else{
+                    logEntry(`${from} failed to approve ${uid}: ${from} is not yet approved`)
+                    rej({error: 403, message: "forbidden"})
+                }
+            }else{
+                logEntry(`${from} failed to approve ${uid}: one or both users don't exist`)
+                rej({error: 403, message:"forbidden"})
+            }
+        })
+    }else{
+        logEntry(`${from} failed to approve ${uid}: no approval token`)
+        rej({error: 406, message:"not an approval token!"})
+    }
+})
 getUsers().then((users)=>{
     if(users.length==0){
         register(require("./firstadmin.json")).then(()=>{logEntry("Authorization control and management system initialized")}, logEntry)
@@ -229,5 +286,7 @@ module.exports = {
     getUser,
     patchUser,
     logout,
-    logEntry
+    logEntry,
+    getUsers,
+    approve
 }

@@ -1,16 +1,18 @@
 const route = require("express").Router();
 const jables = require("../jableshandler");
-const { confirm, recover } = require("../emailgen");
+const { confirm, recover, approve } = require("../emailgen");
 const {createToken, verifyToken} = require("../verlikifyHandler");
 const {addLog, remLog, checkLog, sendMessage, decode} = require("../log");
 const connection = require("../../connection.json");
 const sendMail = require("../mail");
 const {existsSync, readFileSync} = require("fs");
+const mail = require("../mail");
+const { searchArray } = require("../jableshandler");
 const getHTML = (filename, alternate)=>{
     return existsSync(filename)?readFileSync(filename):("<h1>"+(alternate||"something something... erm... SOMETHING!")+"</h1>")
 }
-route.post("/register", verifyToken, decode, (req, res, next)=>{
-    jables.register(req.body, req.vtd).then((uid)=>{
+route.post("/register", (req, res, next)=>{
+    jables.register(req.body).then((uid)=>{
         let token = JSON.stringify(createToken({uid, now:Date.now(), type:"confirm"}));
         while(token.includes('"')){
             token = token.replace('"', '');
@@ -48,8 +50,12 @@ route.get("/confirm", verifyToken, (req, res, next)=>{
                 if(success){
                     res.statusCode = 200;
                     res.write(getHTML("./welcome.html", "Welcome! You may log in now..."))
+                    jables.getUsers().then((users)=>{
+                        users.filter((user)=>user.approved).forEach(({email})=>{
+                            mail(email, `new user ${uid} awaiting approval`, approve(createToken({type: "approve", uid, from:user.uid})))
+                        })
+                    }, console.log)
                 }else{
-                    
                     res.statusCode = 409;
                     res.write(getHTML("/whoopsie.html", "Wanna try that again?"));
                 }
@@ -110,6 +116,31 @@ route.post("/pwreset", verifyToken, decode, (req, res, next)=>{
         })
     }else{
         res.status(409).json("not a recovery token");
+    }
+})
+route.get("/approve", verifyToken, (req, res)=>{
+    jables.approve(req.vtd).then((approvee)=>{
+        res.status(200).end();
+        if(approvee.approved){
+            mail(approvee.email, "congratulations", "You have been approved to join our VPN!")
+        }
+    }, ({error, message})=>{
+        res.status(error).json(message)
+})
+})
+route.get("/approvaltoken", verifyToken, (req, res)=>{
+    const uid = parseInt(req.query.uid);
+    const from = parseInt(req.query.from);
+    if(isNaN(uid)||isNaN(from)){
+        res.status(409).json("uid and from must be in querystring and interpretable as numbers");
+    }else{
+        jables.getUsers((users)=>{
+            if(searchArray("uid", uid, users).before===undefined&&searchArray("uid", from, users).before===undefined){
+                res.status(200).json(createToken({uid, from, type:"approve"}))
+            }else{
+                res.status(401).json("failed")
+            }
+        })
     }
 })
 module.exports=route;

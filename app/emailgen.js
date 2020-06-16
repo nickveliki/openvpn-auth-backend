@@ -5,5 +5,9 @@ module.exports = {
     },
     confirm:(relp)=>{
         return fs.readFileSync("./app/emails/confirm.html").toString().replace("${relp}", relp);
-    }
+    },
+    approve:(relp)=>fs.readFileSync("./app/emails/approve.html").toString().replace("${relp}", relp)
+
+    
+
 }

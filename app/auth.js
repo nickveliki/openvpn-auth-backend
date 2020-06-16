@@ -18,7 +18,7 @@ const {key, iv} = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../.secdat
 const {username, password} = process.env;
 const ivf = Buffer.from(JSON.parse(crypto.createDecipheriv("aes-128-gcm", Buffer.from(key, "base64"), Buffer.from(iv, "base64")).update(fs.readFileSync(path.resolve(__dirname, "../udb/definitions.jdf"))).toString()).Definitions.filter((item)=>item.split("#")[0].endsWith("user.jdf"))[0].split("#")[1].split(","))
 const user = JSON.parse(crypto.createDecipheriv("aes-128-gcm", Buffer.from(key, "base64"), ivf).update(fs.readFileSync(path.resolve(__dirname, "../udb/user.jdf"))).toString()).Versions.filter(({name})=>name===username)[0];
-if(!user){
+if(!user||!user.approved){
     logEntry(`${username} failed to log in to vpn`)
     throw 1
 }else{

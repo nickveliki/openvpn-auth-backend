@@ -20,7 +20,7 @@ const ivf = Buffer.from(JSON.parse(crypto.createDecipheriv("aes-128-gcm", Buffer
 const user = JSON.parse(crypto.createDecipheriv("aes-128-gcm", Buffer.from(key, "base64"), ivf).update(fs.readFileSync(path.resolve(__dirname, "../udb/user.jdf"))).toString()).Versions.filter(({name})=>name===username)[0];
 if(!user||!user.approved){
     logEntry(`${username} failed to log in to vpn`)
-    throw 1
+    process.exit(1)
 }else{
     const {publicKey} = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../.RSA")));
     const verify = crypto.createVerify("SHA256")
@@ -28,10 +28,10 @@ if(!user||!user.approved){
     verify.end();
     if(verify.verify(publicKey, Buffer.from(user.password, "base64"))){
         logEntry(`${user.name}/${user.uid} logged in to vpn successfully`)
-        return 0
+        process.exit(0)
     }else{
         logEntry(`${user.name}/${user.uid} failed to log in to vpn`)
-        throw 1
+        process.exit(1)
     }
 }
 __

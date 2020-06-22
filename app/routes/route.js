@@ -84,12 +84,13 @@ route.get("/vpn", verifyToken, (req, res, next)=>{
                 vpncontrol.stopvpn();
                 res.status(200).end();
             }else{
-                vpncontrol.startVpn((err)=>{
+                vpncontrol.startVpn((err, stdout, stderr)=>{
                     if(!err){
                         res.status(200).end();
                     }else{
                         res.status(500).json(err);
                     }
+                    console.log(stdout, stderr)
                 })
             }
         }, (error, message)=>{

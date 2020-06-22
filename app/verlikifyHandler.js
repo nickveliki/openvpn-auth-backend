@@ -32,6 +32,7 @@ const createToken = (object)=>{
     return `${hexToBase36(cipher)}.${Buffer.from(db64).toString("base64")}`;
 }
 const verifyToken = (req, res, next)=>{
+    console.log(req.query)
     const base = (req.query.vtoken||req.headers.authorization.replace("vtoken ","")).split(".");
     const sighex = base36ToHex(base[0]);
     const comp =  Buffer.from(base[1], "base64").toString();

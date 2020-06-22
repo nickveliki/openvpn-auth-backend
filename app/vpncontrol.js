@@ -3,9 +3,9 @@ const vpnconf = require("../vpnfonf.json");
 const path = require("path")
 const startVpn = (callback)=>{
     stopvpn().then(()=>{
-        
+        start(callback)
     }, ()=>{
-        
+        start(callback)
     })
     
 }
@@ -39,7 +39,12 @@ const status = ()=>new Promise((res, rej)=>{
         if(err){
             rej(false);
         }else{
-            res(stdout.split("\n").filter((item)=>item.length>0&&!item.includes("grep")).map((item)=>item.split(" ").filter((item)=>item.length>0))[0][1])
+            const pro = stdout.split("\n").filter((item)=>item.length>0&&!item.includes("grep")).map((item)=>item.split(" ").filter((item)=>item.length>0))[0]
+            if(pro){
+                res(pro[1])
+            }else{
+                rej(false)
+            }
         }
     })
 })

@@ -1,19 +1,18 @@
 const {exec} = require("child_process");
 const vpnconf = require("../vpnfonf.json");
-
+const path = require("path")
 const vpn = {};
 const startVpn = (callback)=>{
     if(vpn.proc){
         vpn.proc.kill()
     }
-    const proc = exec(`openvpn ${vpnconf.serverconf}`, callback);
+    const proc = exec(`openvpn ${vpnconf.serverconf.split(path.sep)[vpnconf.serverconf.split(path.sep).length-1]}`, {cwd: path.dirname(vpnconf.serverconf)}, callback);
     proc.on("close", console.log);
     proc.on("disconnect", console.log);
     proc.on("error", console.log);
     proc.on("exit", console.log);
     proc.on("message", console.log)
     vpn.proc = proc;
-
 }
 const stopvpn = ()=>{
     if(vpn.proc){

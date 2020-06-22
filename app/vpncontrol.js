@@ -3,15 +3,22 @@ const vpnconf = require("../vpnfonf.json");
 const path = require("path")
 const vpn = {};
 const startVpn = (callback)=>{
-    if(vpn.proc){
-        vpn.proc.kill()
-    }
     const proc = exec(`openvpn ${vpnconf.serverconf.split(path.sep)[vpnconf.serverconf.split(path.sep).length-1]}`, {cwd: path.dirname(vpnconf.serverconf)}, callback);
-    proc.on("close", console.log);
-    proc.on("disconnect", console.log);
-    proc.on("error", console.log);
-    proc.on("exit", console.log);
-    proc.on("message", console.log)
+    proc.on("close", ()=>{
+        console.log("close")
+    });
+    proc.on("disconnect", ()=>{
+        console.log("disconnect")
+    });
+    proc.on("error", ()=>{
+        console.log("error")
+    });
+    proc.on("exit", ()=>{
+        console.log("exit")
+    });
+    proc.on("message", ()=>{
+        console.log("message")
+    })
     vpn.proc = proc;
 }
 const stopvpn = ()=>{

@@ -38,7 +38,7 @@ const slashToDot = (s)=>{
     }
     return `${address} ${nmask}`
 }
-const routes = fs.readFileSync(vpnconf.serverconf).toString().split("\n").filter((line)=>line.includes("route")).map(dotToSlash)
+const routes = fs.readFileSync(vpnconf.serverconf).toString().split("\n").filter((line)=>line.includes("route")&&!line.includes("push")).map(dotToSlash)
 route.get("/ccd", verifyToken, (req, res, next)=>{
     const uid = req.query.uid!=undefined?parseInt(req.query.uid):req.vtd.uid;
     jables.getUser({uid}).then((user)=>{

@@ -66,7 +66,7 @@ route.get("/", verifyToken, (req, res, next)=>{
     res.status(200).json(encode(routes, req.vtd.uid))
 })
 route.get("/conf", verifyToken, (req, res, next)=>{
-    res.status(200).json(encode(fs.readFileSync(vpnconf.serverconf), req.vtd.uid));
+    res.status(200).json(encode(fs.readFileSync(vpnconf.serverconf).toString(), req.vtd.uid));
 })
 route.post("/conf", verifyToken, decode, (req, res, next)=>{
     fs.writeFileSync(vpnconf.serverconf, req.message);

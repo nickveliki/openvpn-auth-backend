@@ -17,7 +17,7 @@ app.use((req, res, next)=>{
     next();
 })
 app.use("/user", user);
-app.use("/exampleroute", route);
+app.use("/routes", route);
 app.get("*", (req, res)=>{
     res.sendFile(path.resolve("./htdocs/index.html"));
 })

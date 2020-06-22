@@ -17,12 +17,11 @@ const base36ToHex = (base36)=>{
     let sighex = "";
     const parts = base36.split("-");
     parts.forEach((base36)=>{
-        const part = parseInt(base36, 36).toString(16)
-        if (part.length<8){
-            sighex+= "0"+part;
-        }else{
-            sighex+=part;
+        let part = parseInt(base36, 36).toString(16)
+        while(part.length<8){
+            part="0"+part;
         }
+        sighex+=part;
         
         });
     return sighex;

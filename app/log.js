@@ -8,8 +8,8 @@ const addLog = ({uid, password, subscription})=>new Promise((res, rej)=>{
         const {i, before} = searchArray("uid", uid, logged);
         if(before===undefined){
             warning = true;
-            sendMessage({uid, message:{type: "warning", text:"Someone is logging on to your account. If this isn't you, contact phil@thern.wtf"}}).catch(logEntry)
-            logged[i].sesskey = sesskey;
+            //sendMessage({uid, message:{type: "warning", text:"Someone is logging on to your account. If this isn't you, contact phil@thern.wtf"}}).catch(logEntry)
+            logged[i].sessKey = sessKey;
             logged[i].subscription = subscription
         }else{
             logged.splice(before?i:(i+1), 0, {uid, sessKey, subscription});
@@ -20,7 +20,7 @@ const addLog = ({uid, password, subscription})=>new Promise((res, rej)=>{
         
 })
 const decode = (req, res, next)=>{
-    const {i, before} = searchArray("uid", req.body.uid, logged);
+    const {i, before} = searchArray("uid", req.vtd.uid, logged);
     if(before===undefined){
         req.message = decrypt(req.body.message, logged[i].sessKey, Buffer.from(req.body.iv, "hex"));
         next();

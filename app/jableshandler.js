@@ -17,6 +17,9 @@ const makefolder = (folder)=>new Promise((res)=>{
     })
 })
 const logEntry = (logData)=>new Promise((res)=>{
+    if(typeof(logData)==="object"){
+        logData=JSON.stringify(logData);
+    }
     const D = new Date();
     const folder = path.resolve(path.join(__dirname,"..", D.getFullYear().toString()))
     makefolder(folder).then(()=>{
@@ -84,8 +87,11 @@ const register = (userData)=>new Promise((res, rej)=>{
                 const uid = users.length>0?users[users.length-1].uid+1:0;
                 userData.uid = uid;
                 userData.password = encodePassword(userData.password);
+                userData.joined = new Date().toUTCString()
                 if(userData.confirmed){
                     userData.approved=true;
+                    const {ccd} = require("../vpnfonf.json")
+                    fs.writeFileSync(ccd+"/"+userData.name, "");
                 }
                 jables.writeDefinition({location, definition: updateObject(userBase, userData)}).then(()=>{
                     if (!userData.confirmed){
@@ -113,20 +119,6 @@ const register = (userData)=>new Promise((res, rej)=>{
     }else{
         rej({error: 401, message: "signup failed"})
     }
-})
-const registerExposed = (userData, vtd)=>new Promise((res, rej)=>{
-    checkv(vtd).then((user)=>{
-        register(userData).then((uid)=>{
-            logEntry(`${user.name}/${user.uid} registered ${userData.name}/${uid}`)
-            res(uid)
-        }, (error)=>{
-            logEntry(JSON.stringify(error))
-            rej(error)
-        })
-    }, (error)=>{
-        logEntry(JSON.stringify(error))
-        rej(error)
-    })
 })
 const confirm = (uid)=>new Promise((res, rej)=>{
     getUser({uid}).then((user)=>{
@@ -164,10 +156,10 @@ const checkv = ({uid, name, email, now}) => new Promise((res, rej)=>{
     })
 })
 const logout = ({uid, now})=>new Promise((res, rej)=>{
-    checkv({uid, now}).then(()=>{
+    checkv({uid, now}).then((user)=>{
         jables.writeDefinition({location, definition: updateObject(userBase, {uid, lockout: Date.now()})}).then(()=>{
             logEntry(`${user.name}/${user.uid} logout from management`)
-            
+            res();
         }, (error)=>{
             logEntry(JSON.stringify(error))
             rej(error)
@@ -238,18 +230,18 @@ const approve = ({uid, from, type})=>new Promise((res, rej)=>{
                     if(users[approvee.i].approvedby){
                         if(!users[approvee.i].approvedby.includes(from)){
                             users[approvee.i].approvedby.push(from);
-                            if(users[approvee.i].approvedby.length>users.filter(({approved})=>approved).length/2){
-                                users[approvee.i].approved = true;
-                            }
                         }else{
                             write = false;
                         }
                     }else{
                         users[approvee.i].approvedby=[from];
                     }
+                    if(users[approvee.i].approvedby.length>users.filter(({approved})=>approved).length/2){
+                        users[approvee.i].approved = true;
+                    }
                     if(write){
-                        jables.writeDefinition({location, definition: updateObject(userbase, users[approvee.i])}).then(()=>{
-                            logEntry(`${from} approved ${uid}, ${users[approvee.i].appproved?"fully approved":(Math.ceil(users.filter(({approved})=>approved).length/2-users[approvee.i].appprovedby.length)+" votes missing")}`);
+                        jables.writeDefinition({location, definition: updateObject(userBase, users[approvee.i])}).then(()=>{
+                            logEntry(`${from} approved ${uid}, ${users[approvee.i].approved?"fully approved":(Math.ceil(users.filter(({approved})=>approved).length/2-users[approvee.i].approvedby.length)+" votes missing")}`);
                             res(users[approvee.i]);
                         }, (error)=>{
                             logEntry(JSON.stringify(error))
@@ -280,7 +272,7 @@ getUsers().then((users)=>{
 }, logEntry)
 module.exports = {
     searchArray,
-    register: registerExposed, 
+    register, 
     confirm,
     login,
     getUser,

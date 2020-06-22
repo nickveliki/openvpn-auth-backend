@@ -81,23 +81,29 @@ route.get("/vpn", verifyToken, (req, res, next)=>{
     if(stop||start){
         jables.logEntry(`vpn ${stop?"stopped":"started"} by ${req.vtd.uid}`).then(()=>{
             if(req.query.stop){
-                vpncontrol.stopvpn();
-                res.status(200).end();
+                vpncontrol.stopvpn().then(()=>{
+                    res.status(200).end();
+                }, (error, message)=>{
+                    res.status(error).json(message)
+                });
             }else{
-                vpncontrol.startVpn((err, stdout, stderr)=>{
-                    if(!err){
-                        res.status(200).end();
+                vpncontrol.startVpn((err, pid)=>{
+                    if(!err&&pid){
+                        res.status(200).json(pid);
                     }else{
-                        res.status(500).json(err);
+                        res.status(500).json({err, pid});
                     }
-                    console.log(stdout, stderr)
                 })
             }
         }, (error, message)=>{
             res.status(error).json(message)
         })
     }else{
-        res.status(200).json(vpncontrol.status());
+        vpncontrol.status().then((pid)=>{
+            res.status(200).json(pid);
+        }, ()=>{
+            res.status(200).json(false);
+        })
     }
     
     

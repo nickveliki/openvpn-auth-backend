@@ -1,4 +1,4 @@
-importScripts("precache-manifest.019b4f4f4aaddd57c45f17b6ba2f3d1a.js", "https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
+importScripts("precache-manifest.1f421188b21547ce1780194f0b09beec.js", "https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 workbox.core.skipWaiting();
 self.addEventListener('activate', event => {

@@ -10,7 +10,7 @@ const startVpn = (callback)=>{
     
 }
 const start = (callback)=>{
-    const proc = exec(`openvpn ${vpnconf.serverconf.split(path.sep)[vpnconf.serverconf.split(path.sep).length-1]}`, {cwd: path.dirname(vpnconf.serverconf)}, (err, stdout)=>{
+    const proc = exec(`/usr/sbin/openvpn ${vpnconf.serverconf.split(path.sep)[vpnconf.serverconf.split(path.sep).length-1]}`, {cwd: path.dirname(vpnconf.serverconf)}, (err, stdout)=>{
         status().then((pid)=>{
             callback(err, pid)
         }, ()=>{

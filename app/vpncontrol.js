@@ -48,6 +48,9 @@ const status = ()=>new Promise((res, rej)=>{
         }
     })
 })
+status().catch(()=>{
+    start(console.log)
+})
 module.exports={
     startVpn, stopvpn, status
 }
